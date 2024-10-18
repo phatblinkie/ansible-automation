@@ -1,0 +1,8 @@
+---
+- hosts: win
+  tasks:
+    - name: Update Acrobat Reader
+      win_package:
+        path: http://164.225.186.92/software/AcroRdrDCUpd2400221005.msp
+        state: present
+

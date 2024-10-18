@@ -1,0 +1,8 @@
+---
+- hosts: rhel89
+  tasks:
+    - name: Upgrade all packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      become: true

@@ -1,0 +1,10 @@
+---
+- hosts: win
+  tasks:
+    - name: Install 7-Notepad++
+      win_package:
+        path: http://164.225.186.92/software/npp.8.6.9.Installer.x64.exe
+        product_id: Notepad++
+        arguments: /S
+        state: present
+

@@ -1,0 +1,12 @@
+---
+- hosts: win
+  tasks:
+    - name: Install WinSCP
+      win_package:
+        path: http://164.225.186.92/software/WinSCP-6.3.4-Setup.exe
+        product_id: winscp3_is1
+        arguments:
+          - /SILENT
+          - /ALLUSERS
+        state: present
+

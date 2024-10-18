@@ -1,0 +1,37 @@
+---
+- hosts: win
+  tasks:
+   - name: Ping Windows Hosts
+     win_ping:
+
+   - name: send custom data to weburl
+     ansible.builtin.uri:
+       #'{"semaphore_vars":{"task_details":{"id":74,"url":null,"username":"forward.dev"}},"var_environment":"production"}'
+       #use the semaphore_vars.task_details.id value
+       url: "http://192.168.59.131/post/store_facts.php?taskid={{ semaphore_vars.task_details.id }}"
+       method: POST
+       body_format: json
+         #body: '{"content": "test data on {{ mysqld_status.stdout_lines }}"}'
+         #body: '{"task_id": "{{ ansible_facts.all_ipv4_addresses }} "}'
+       body: "{{ ansible_facts }}"
+       headers:
+         Content-Type: application/json
+       status_code: 200
+       return_content: True
+     register: postoutput
+     delegate_to: localhost
+
+   - name: Output
+     ansible.builtin.debug:
+       msg:
+         #         - "Output of podman ps command:"
+         #         - "{{ podman_output.stdout_lines }}"
+         #         - "Contents of web page:"
+         #         - "{{ web_output.content }}"
+         #         - "facts:"
+         #         - "{{ ansible_facts }}"
+         - "post output:"
+         - "{{ postoutput }}"
+           #         - "semaphore_vars:"
+           #         - "{{ semaphore_vars }}"
+

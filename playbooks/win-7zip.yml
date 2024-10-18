@@ -1,0 +1,10 @@
+---
+- hosts: win
+  tasks:
+    - name: Install 7-Zip
+      win_package:
+        path: http://164.225.186.92/software/7z2408-x64.exe
+        product_id: 7-Zip
+        arguments: /S
+        state: present
+

@@ -1,0 +1,8 @@
+---
+- name: Display Facts
+  hosts: rhel89
+  gather_facts: yes
+  tasks:
+  - name: Print all available facts
+    ansible.builtin.debug:
+      var: ansible_facts
