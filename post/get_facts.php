@@ -74,8 +74,19 @@ else
 if ($db->getLastErrno() === 0)
 {
 	//echo 'Update succesfull';
-	if ($format == "json") {echo stripslashes($rows);}
-	elseif ($format == "array") {echo stripslashes(json_encode($rows, JSON_PRETTY_PRINT));}
+	if ($format == "json") {echo stripslashes($rows[0]['facts_json']);}
+	elseif ($format == "array") 
+	{
+		$output = stripslashes(json_encode($rows[0]['facts_json'], JSON_PRETTY_PRINT));
+//	$str = "Hello Wo";
+//echo $str . "<br>";
+//echo ltrim($str,"Hello");
+		$str = '"';
+		$output = ltrim($output, $str);
+		$output = rtrim($output, $str);
+		echo $output;
+		
+	}
 	else {
 		foreach($rows as $data)
 		{
