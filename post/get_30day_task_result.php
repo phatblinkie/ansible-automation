@@ -28,8 +28,7 @@ else
 }
 
 //define some queries to use that can be switched by changing the ?queryid=1  on the url
-$query[1] = "SELECT facts_json FROM `task_extra_data` where `facts_json` -> '$.lo.mtu' > 0 limit 1;";
-$query[2] = "SELECT 
+$query[1] = "SELECT 
   DATE(start) AS date, 
   COUNT(*) AS total_count,
   status as statusvalue
@@ -40,13 +39,6 @@ $query[2] = "SELECT
 
 //assign which one
 $query = $query[$queryid];
-
-//$test = $db->rawQuery($query);
-//print_r($test); array at this point
-//Json return type
-
-//$json = $db->JsonBuilder()->rawQuery($query);
-//print_r($json);// returns json data
 
 
 function getdata_from_mysql($query, $format)
@@ -71,36 +63,15 @@ else
 	$rows = $db->ObjectBuilder()->rawQuery($query);
 	}
 //print_r($rows);// returns json data
-//echo $json;
-
-//$sqlstmt = Array ("task_id" => "$taskid",
-//               "facts_json" => "$json"
-//);
-//print_r($sqlstmt);
-//$db->insert ('task_extra_data', $sqlstmt);
 
 if ($db->getLastErrno() === 0)
 {
 	//echo 'Update succesfull';
-	if ($format == "json") {echo stripslashes($rows[0]['facts_json']);}
-	elseif ($format == "array") 
-	{
-		$output = stripslashes(json_encode($rows[0]['facts_json'], JSON_PRETTY_PRINT));
-//	$str = "Hello Wo";
-//echo $str . "<br>";
-//echo ltrim($str,"Hello");
-		$str = '"';
-		$output = ltrim($output, $str);
-		$output = rtrim($output, $str);
-		echo $output;
-		
+	if ($format == "json" || $format == "array") {
+		stripslashes(print_r($rows));
 	}
 	else {
-		foreach($rows as $data)
-		{
-		echo stripslashes(json_encode($data));
-		//print_r($data);
-		}
+		print_r($rows);
 	}
 	
 }
@@ -116,7 +87,7 @@ else
 //print_r($data);
 if ($queryid != null)
 {
-	getdata_from_mysql($query, 'array');
+	getdata_from_mysql($query, "json");
 }
 else
 {
