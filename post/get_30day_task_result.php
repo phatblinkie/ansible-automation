@@ -1,5 +1,7 @@
 <?php
 #phpinfo();
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
 
 require_once ('/usr/share/PHP-MySQLi-Database-Class/MysqliDb.php');
 //https://github.com/ThingEngineer/PHP-MySQLi-Database-Class?tab=readme-ov-file#join-method
@@ -33,8 +35,8 @@ $query[1] = "SELECT
   COUNT(*) AS total_count,
   status as statusvalue
   FROM semaphore_db.task
-  WHERE DATE_SUB(NOW(), INTERVAL 1 month) < start 
-  GROUP BY statusvalue, date
+  WHERE DATE_SUB(NOW(), INTERVAL 1 week) < start 
+  GROUP BY date, statusvalue
   order by date desc;";
 
 //assign which one
