@@ -1,0 +1,10 @@
+#to select rows matching a json field value, use JSON_EXTRACT(`facts_json` , '$.lo.mtu') > 0;
+ 
+SELECT * FROM `task_extra_data` where JSON_EXTRACT(`facts_json` , '$.lo.mtu') > 0; 
+or more pretty
+SELECT * FROM `task_extra_data` where `facts_json` -> '$.lo.mtu' > 0; 
+
+#to select a value out of the json, use 
+SELECT JSON_EXTRACT(facts_json, "$.lo.mtu") AS name FROM `task_extra_data` where `facts_json` -> '$.lo.mtu' > 0;
+
+
