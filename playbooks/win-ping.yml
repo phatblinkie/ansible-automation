@@ -8,7 +8,7 @@
      ansible.builtin.uri:
        #'{"semaphore_vars":{"task_details":{"id":74,"url":null,"username":"forward.dev"}},"var_environment":"production"}'
        #use the semaphore_vars.task_details.id value
-       url: "http://192.168.32.133/post/store_facts.php?taskid={{ semaphore_vars.task_details.id }}"
+       url: "http://localhost/post/store_facts.php?taskid={{ semaphore_vars.task_details.id }}"
        method: POST
        body_format: json
          #body: '{"content": "test data on {{ mysqld_status.stdout_lines }}"}'

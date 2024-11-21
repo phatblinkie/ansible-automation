@@ -1,0 +1,72 @@
+---
+- name: Gather Windows System Status Data
+  hosts: win
+  gather_facts: yes
+  tasks:
+    - name: Gather data from Windows hosts
+      when: ansible_os_family == "Windows"
+      block:
+        - name: Gather Hostname
+          win_shell: hostname
+          register: hostname_output
+
+        - name: Gather Ansible Ping
+          win_ping:
+          register: ansible_ping_output
+
+        - name: Gather Disk Capacity
+          #win_shell: Get-PSDrive C | Select-Object Used, @{Name="Used";Expression={[math]::round(($_.Used/1GB),2)}}
+          #win_shell: Get-PSDrive C | Select-Object Used, Free, @{Name='Used %';Expression={[math]::round(($_.Used/$_.Free),2)*100}}|select 'Used %'
+          win_shell: get-psdrive c | % { $_.free/($_.used + $_.free) } | % tostring p
+          win_shell: (Get-PSDrive C | ForEach-Object {$percentage = [math]::Floor(($_.Free / ($_.Used + $_.Free)) * 100); $percentage.ToString()}) -join ''
+
+          register: disk_capacity_output
+
+        - name: Gather Process Usage
+          #win_shell: Get-Process | Sort-Object CPU -Descending | Select-Object -First 5
+          win_shell: (Get-WmiObject -Class Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average 
+          register: proc_usage_output
+
+        - name: Gather App Check for WinRM
+          win_service:
+            name: WinRM
+            start_mode: auto
+            state: started
+          register: app_check_output
+
+        - name: Append Windows data to results
+          set_fact:
+            system_status_results: |
+              {{
+                system_status_results | default([]) +
+                [{
+                  "hostname": hostname_output.stdout.strip(),
+                  "ansible_ping": ansible_ping_output.ping,
+                  "disk_capacity": disk_capacity_output.stdout.strip(),
+                  "proc_usage": proc_usage_output.stdout_lines,
+                  "app_check": app_check_output.state
+                }]
+              }}
+
+        - name: send custom data to weburl
+          ansible.builtin.uri:
+            url: "http://localhost/post/store_system_status.php?taskid={{ semaphore_vars.task_details.id }}"
+            method: POST
+            body_format: json
+            body: "{{ system_status_results }}"
+            headers:
+              Content-Type: application/json
+            status_code: 200
+            return_content: True
+          register: postoutput
+          delegate_to: localhost
+
+        - name: Output
+          ansible.builtin.debug:
+            msg:
+              - "post output:"
+              - "{{ postoutput }}"
+
+        - name: Output results
+          debug:
+            var: system_status_results

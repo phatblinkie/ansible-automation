@@ -1,0 +1,67 @@
+---
+- name: Gather Linux System Status Data
+  hosts: linux
+  gather_facts: yes
+  tasks:
+    - name: Gather data from Linux hosts
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+      block:
+        - name: Gather Hostname
+          shell: hostname
+          register: hostname_output
+
+        - name: Gather Ansible Ping
+          ping:
+          register: ansible_ping_output
+
+        - name: Gather Disk Capacity
+          shell: df -h / | tail -1 | awk '{print $5}'
+          register: disk_capacity_output
+
+        - name: Gather Process Usage
+          #shell: ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -6
+          shell: uptime|awk -F, '{ print $4 }'|xargs 
+          register: proc_usage_output
+
+        - name: Gather App Check for sshd
+          service:
+            name: sshd
+            state: started
+          register: app_check_output
+
+        - name: Append Linux data to results
+          set_fact:
+            system_status_results: |
+              {{
+                system_status_results | default([]) +
+                [{
+                  "hostname": hostname_output.stdout.strip(),
+                  "ansible_ping": ansible_ping_output.ping,
+                  "disk_capacity": disk_capacity_output.stdout.strip(),
+                  "proc_usage": proc_usage_output.stdout_lines,
+                  "app_check": app_check_output.state
+                }]
+              }}
+        - name: send custom data to weburl
+          ansible.builtin.uri:
+            url: "http://localhost/post/store_system_status.php?taskid={{ semaphore_vars.task_details.id }}"
+            method: POST
+            body_format: json
+            body: "{{ system_status_results }}"
+            headers:
+              Content-Type: application/json
+            status_code: 200
+            return_content: True
+          register: postoutput
+          delegate_to: localhost
+     
+        - name: Output
+          ansible.builtin.debug:
+            msg:
+              - "post output:"
+              - "{{ postoutput }}"
+
+        - name: Output results
+          debug:
+            var: system_status_results
+
