@@ -15,11 +15,7 @@
           register: ansible_ping_output
 
         - name: Gather Disk Capacity
-          #win_shell: Get-PSDrive C | Select-Object Used, @{Name="Used";Expression={[math]::round(($_.Used/1GB),2)}}
-          #win_shell: Get-PSDrive C | Select-Object Used, Free, @{Name='Used %';Expression={[math]::round(($_.Used/$_.Free),2)*100}}|select 'Used %'
-          win_shell: get-psdrive c | % { $_.free/($_.used + $_.free) } | % tostring p
-          win_shell: (Get-PSDrive C | ForEach-Object {$percentage = [math]::Floor(($_.Free / ($_.Used + $_.Free)) * 100); $percentage.ToString()}) -join ''
-
+          win_shell: (Get-PSDrive C | ForEach-Object {$percentage = [math]::Floor(($_.Used / ($_.Used + $_.Free)) * 100); $percentage.ToString()}) -join ''
           register: disk_capacity_output
 
         - name: Gather Process Usage
