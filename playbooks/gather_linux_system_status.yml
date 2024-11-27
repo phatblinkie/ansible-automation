@@ -1,6 +1,9 @@
 ---
 - name: Gather Linux System Status Data
-  hosts: linux
+  hosts: linux_hosts
+  vars:
+    - ansible_remote_tmp: /var/tmp/ans
+    - host_key_checking: false
   gather_facts: yes
   tasks:
     - name: Initialize system_status_results
@@ -45,6 +48,19 @@
                 }]
               }}
 
+        - name: Send custom data to web URL
+          ansible.builtin.uri:
+            url: "http://localhost/post/store_system_status.php?taskid={{ semaphore_vars.task_details.id }}"
+            method: POST
+            body_format: json
+            body: "{{ system_status_results }}"
+            headers:
+              Content-Type: application/json
+            status_code: 200
+            return_content: True
+          register: postoutput
+          delegate_to: localhost
+
       rescue:
         - name: Handle unreachable host
           set_fact:
@@ -59,35 +75,15 @@
                 }]
               }}
 
-    - name: Save system status results
-      local_action:
-        module: copy
-        content: "{{ system_status_results | to_nice_json }}"
-        dest: /tmp/system_status_results.json
-      delegate_to: localhost
-
-- name: Post Linux System Status Data to Web URL
-  hosts: localhost
-  tasks:
-    - name: Send custom data to web URL
-      ansible.builtin.uri:
-        url: "http://localhost/post/store_system_status.php?taskid={{ semaphore_vars.task_details.id }}"
-        method: POST
-        body_format: json
-        body: "{{ lookup('file', '/tmp/system_status_results.json') }}"
-        headers:
-          Content-Type: application/json
-        status_code: 200
-        return_content: True
-      register: postoutput
-
-    - name: Output
-      ansible.builtin.debug:
-        msg:
-          - "post output:"
-          - "{{ postoutput }}"
-
-    - name: Output results
-      debug:
-        msg: "{{ lookup('file', '/tmp/system_status_results.json') }}"
-
+        - name: Send custom data to web URL - host was down
+          ansible.builtin.uri:
+            url: "http://localhost/post/store_system_status.php?taskid={{ semaphore_vars.task_details.id }}"
+            method: POST
+            body_format: json
+            body: "{{ system_status_results }}"
+            headers:
+              Content-Type: application/json
+            status_code: 200
+            return_content: True
+          register: postoutput
+          delegate_to: localhost
