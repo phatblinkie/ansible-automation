@@ -6,6 +6,7 @@ CREATE TABLE `task_extra_data` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1803 DEFAULT CHARSET=latin1 COMMENT='for storing extra information manually in plays'
 
+
 CREATE TABLE `system_status` (
   `id` int NOT NULL AUTO_INCREMENT,
   `hostname` varchar(255) NOT NULL,
@@ -14,5 +15,8 @@ CREATE TABLE `system_status` (
   `proc_usage` text NOT NULL,
   `app_check` varchar(255) NOT NULL,
   `last_updated` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+  `uptime` int DEFAULT NULL,
+  `last_responded` datetime DEFAULT NULL COMMENT 'updated only when host is alive',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `hostname` (`hostname`)
+) ENGINE=InnoDB AUTO_INCREMENT=155 DEFAULT CHARSET=latin1

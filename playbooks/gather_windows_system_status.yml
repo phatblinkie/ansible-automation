@@ -1,14 +1,24 @@
 ---
 - name: Gather Windows System Status Data
   hosts: win
-  gather_facts: yes
+  gather_facts: false
   tasks:
     - name: Gather data from Windows hosts
-      when: ansible_os_family == "Windows"
       block:
-        - name: Gather Hostname
-          win_shell: hostname
-          register: hostname_output
+        - name: Test Connections
+          wait_for_connection:
+            delay: 1
+            timeout: 10
+        - name: Collect facts
+          gather_facts:
+
+        - name: Initialize system_status_results
+          set_fact:
+            system_status_results: []
+
+              #        - name: Gather Hostname
+              #          win_shell: hostname
+              #          register: hostname_output
 
         - name: Gather Ansible Ping
           win_ping:
@@ -30,17 +40,17 @@
             state: started
           register: app_check_output
 
-        - name: Append Windows data to results
+        - name: Append Linux data to results
           set_fact:
             system_status_results: |
               {{
-                system_status_results | default([]) +
-                [{
-                  "hostname": hostname_output.stdout.strip(),
+                system_status_results + [{
+                  "hostname": ansible_fqdn,
                   "ansible_ping": ansible_ping_output.ping,
                   "disk_capacity": disk_capacity_output.stdout.strip(),
                   "proc_usage": proc_usage_output.stdout_lines,
-                  "app_check": app_check_output.state
+                  "app_check": app_check_output.state,
+                  "uptime": ansible_uptime_seconds
                 }]
               }}
 
@@ -66,3 +76,36 @@
         - name: Output results
           debug:
             var: system_status_results
+
+      rescue:
+        - name: Initialize system_status_results on rescue
+          set_fact:
+            system_status_results: []
+
+        - name: Handle unreachable hosts
+          set_fact:
+            system_status_results: |
+              {{
+                system_status_results + [{
+                  "hostname": inventory_hostname,
+                  "ansible_ping": "unreachable",
+                  "disk_capacity": "0",
+                  "proc_usage": ["0"],
+                  "app_check": "FAILED",
+                  "uptime": 0
+                }]
+              }}
+
+        - name: Send custom data to web URL - unreachable hosts
+          ansible.builtin.uri:
+            url: "http://localhost/post/store_system_status.php?taskid={{ semaphore_vars.task_details.id }}"
+            method: POST
+            body_format: json
+            body: "{{ system_status_results }}"
+            headers:
+              Content-Type: application/json
+            status_code: 200
+            return_content: True
+          register: postoutput
+          delegate_to: localhost
+

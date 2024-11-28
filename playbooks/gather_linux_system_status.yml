@@ -2,20 +2,28 @@
 - name: Gather Linux System Status Data
   hosts: linux_hosts
   vars:
-    - ansible_remote_tmp: /var/tmp/ans
-    - host_key_checking: false
-  gather_facts: yes
+    ansible_remote_tmp: /var/tmp/ans
+    host_key_checking: false
+  gather_facts: false
   tasks:
-    - name: Initialize system_status_results
-      set_fact:
-        system_status_results: []
+    - block:
+        - name: Test Connections
+          wait_for_connection:
+            delay: 1
+            timeout: 10
+        - name: Collect facts
+          gather_facts:
 
-    - name: Gather data from Linux hosts
-      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
-      block:
-        - name: Gather Hostname
-          shell: hostname
-          register: hostname_output
+        - name: Initialize system_status_results
+          set_fact:
+            system_status_results: []
+
+              # save time, take this from ansible facts
+              #        - name: Gather Hostname
+              #          shell: hostname
+              #          register: hostname_output
+
+              # also gather ansible_uptime_seconds from facts
 
         - name: Gather Ansible Ping
           ping:
@@ -40,11 +48,12 @@
             system_status_results: |
               {{
                 system_status_results + [{
-                  "hostname": hostname_output.stdout.strip(),
+                  "hostname": ansible_fqdn,
                   "ansible_ping": ansible_ping_output.ping,
                   "disk_capacity": disk_capacity_output.stdout.strip(),
                   "proc_usage": proc_usage_output.stdout_lines,
-                  "app_check": app_check_output.state
+                  "app_check": app_check_output.state,
+                  "uptime": ansible_uptime_seconds
                 }]
               }}
 
@@ -61,21 +70,30 @@
           register: postoutput
           delegate_to: localhost
 
+            #        - name: debug
+            #          debug:
+            #            var: postoutput
+
       rescue:
-        - name: Handle unreachable host
+        - name: Initialize system_status_results on rescue
+          set_fact:
+            system_status_results: []
+
+        - name: Handle unreachable hosts
           set_fact:
             system_status_results: |
               {{
                 system_status_results + [{
                   "hostname": inventory_hostname,
                   "ansible_ping": "unreachable",
-                  "disk_capacity": "N/A",
-                  "proc_usage": ["N/A"],
-                  "app_check": "N/A"
+                  "disk_capacity": "0",
+                  "proc_usage": ["0"],
+                  "app_check": "FAILED",
+                  "uptime": 0
                 }]
               }}
 
-        - name: Send custom data to web URL - host was down
+        - name: Send custom data to web URL - unreachable hosts
           ansible.builtin.uri:
             url: "http://localhost/post/store_system_status.php?taskid={{ semaphore_vars.task_details.id }}"
             method: POST

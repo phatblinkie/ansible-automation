@@ -18,7 +18,34 @@ if ($conn->connect_error) {
 }
 
 // SQL query to fetch data
-$sql = "SELECT hostname, ansible_ping, CAST(REPLACE(disk_capacity, '%', '') AS UNSIGNED) AS disk_capacity, proc_usage, CASE WHEN app_check IN ('running', 'started') THEN 'OK' ELSE 'Failed' END AS app_check, last_updated, id FROM system_status WHERE id IN ( SELECT MAX(id) FROM system_status GROUP BY hostname ) ORDER BY id DESC;";
+#$sql = "SELECT hostname, ansible_ping, CAST(REPLACE(disk_capacity, '%', '') AS UNSIGNED) AS disk_capacity, proc_usage, CASE WHEN app_check IN ('running', 'started') THEN 'OK' ELSE 'Failed' END AS app_check, last_updated, id, uptime FROM system_status WHERE id IN ( SELECT MAX(id) FROM system_status GROUP BY hostname ) ORDER BY id DESC;";
+$sql = "SELECT 
+  hostname, 
+  ansible_ping, 
+  CAST(REPLACE(disk_capacity, '%', '') AS UNSIGNED) AS disk_capacity, 
+  proc_usage, 
+  CASE 
+    WHEN app_check IN ('running', 'started') THEN 'OK' 
+    ELSE 'Failed' 
+  END AS app_check, 
+  last_updated,
+  last_responded, 
+  id, 
+  uptime 
+FROM 
+  system_status 
+WHERE 
+  id IN (
+    SELECT 
+      MAX(id) 
+    FROM 
+      system_status 
+    GROUP BY 
+      hostname
+  ) 
+  AND (uptime != 0 OR TIMESTAMPDIFF(HOUR, last_responded, NOW()) <= 24)
+ORDER BY 
+  id DESC;";
 $result = $conn->query($sql);
 
 $data = [];

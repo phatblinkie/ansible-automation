@@ -25,7 +25,7 @@ if ($data && is_array($data)) {
     $valid = true;
 
     foreach ($data as $item) {
-        if (!isset($item['hostname'], $item['ansible_ping'], $item['disk_capacity'], $item['proc_usage'], $item['app_check'])) {
+        if (!isset($item['hostname'], $item['ansible_ping'], $item['disk_capacity'], $item['proc_usage'], $item['app_check'], $item['uptime'])) {
             $valid = false;
             break;
         }
@@ -33,8 +33,8 @@ if ($data && is_array($data)) {
 
     if ($valid) {
         // Prepare and bind
-        $stmt = $conn->prepare("INSERT INTO system_status (hostname, ansible_ping, disk_capacity, proc_usage, app_check) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $hostname, $ansible_ping, $disk_capacity, $proc_usage, $app_check);
+        $stmt = $conn->prepare("INSERT INTO system_status (hostname, ansible_ping, disk_capacity, proc_usage, app_check, uptime, last_updated, last_responded) VALUES (?, ?, ?, ?, ?, ?, IF(? = 'pong', ?, ?), IF(? = 'unreachable', ?, NULL)) ON DUPLICATE KEY UPDATE ansible_ping=VALUES(ansible_ping), disk_capacity=VALUES(disk_capacity), proc_usage=VALUES(proc_usage), app_check=VALUES(app_check), uptime=VALUES(uptime), last_updated=VALUES(last_updated), last_responded=IF(VALUES(ansible_ping)='pong', VALUES(last_updated), last_responded)");
+        $stmt->bind_param("sssssssssss", $hostname, $ansible_ping, $disk_capacity, $proc_usage, $app_check, $uptime, $ansible_ping, $last_updated, $last_updated, $ansible_ping, $last_updated);
 
         $success = true;
 
@@ -45,6 +45,8 @@ if ($data && is_array($data)) {
             $disk_capacity = $item['disk_capacity'];
             $proc_usage = implode(",", $item['proc_usage']); // Convert array to string
             $app_check = $item['app_check'];
+            $uptime = $item['uptime'];
+            $last_updated = date("Y-m-d H:i:s");
 
             // Execute the statement
             if (!$stmt->execute()) {
@@ -72,4 +74,3 @@ if ($data && is_array($data)) {
 header('Content-Type: application/json');
 echo json_encode($response);
 ?>
-
