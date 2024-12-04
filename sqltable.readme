@@ -6,9 +6,9 @@ CREATE TABLE `task_extra_data` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1803 DEFAULT CHARSET=latin1 COMMENT='for storing extra information manually in plays'
 
-
 CREATE TABLE `system_status` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `ip_address` varchar(48) NOT NULL COMMENT 'ip4 or ip6 address',
   `hostname` varchar(255) NOT NULL,
   `ansible_ping` varchar(255) NOT NULL,
   `disk_capacity` varchar(255) NOT NULL,
@@ -17,6 +17,8 @@ CREATE TABLE `system_status` (
   `last_updated` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `uptime` int DEFAULT NULL,
   `last_responded` datetime DEFAULT NULL COMMENT 'updated only when host is alive',
+  `project_id` int DEFAULT NULL,
+  `task_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `hostname` (`hostname`)
-) ENGINE=InnoDB AUTO_INCREMENT=155 DEFAULT CHARSET=latin1
+  UNIQUE KEY `ip_address` (`ip_address`)
+) ENGINE=InnoDB AUTO_INCREMENT=4077 DEFAULT CHARSET=latin1
