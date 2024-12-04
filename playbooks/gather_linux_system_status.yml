@@ -21,7 +21,7 @@
           delegate_to: localhost
 
         - name: Resolve IP address on control node if not already an IP address
-          command: getent ahostsv4 {{ inventory_hostname }} | head -n 1 | awk '{print $1}'
+          shell: getent ahostsv4 {{ inventory_hostname }} | head -n 1 | awk '{print $1}'
           register: ip_lookup
           when: not is_ip_address
           delegate_to: localhost
@@ -90,7 +90,7 @@
           delegate_to: localhost
 
         - name: Resolve IP address on control node if not already an IP address
-          command: getent ahostsv4 {{ inventory_hostname }} | head -n 1 | awk '{print $1}'
+          shell: getent ahostsv4 {{ inventory_hostname }} | head -n 1 | awk '{print $1}'
           register: ip_lookup
           when: not is_ip_address
           delegate_to: localhost
