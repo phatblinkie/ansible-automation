@@ -1,0 +1,40 @@
+---
+- hosts: "{{ target }}"
+  vars:
+    - ansible_remote_tmp: /var/tmp/ans
+  tasks:
+    - name: Upgrade all packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      register: dnfresult    
+      become: true
+
+    - name: Display Results
+      ansible.builtin.debug:
+        msg:
+          - "Patching Status"
+          - "{{ dnfresult }}"
+
+    - name: Send facts to database
+      ansible.builtin.uri:
+        url: "http://127.0.0.1/post/store_facts.php?taskid=1"
+        method: POST
+        body_format: json
+        body: "{{ dnfresult }}"
+        headers:
+          Content-Type: application/json
+        status_code: 200
+        return_content: True
+      register: postoutput1
+      delegate_to: localhost
+      check_mode: no
+
+    - name: Display db Post Status
+      ansible.builtin.debug:
+        msg:
+          - "Patching Status"
+          - "{{ postoutput1 }}"
+
+

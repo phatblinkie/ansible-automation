@@ -1,5 +1,5 @@
 ---
-- hosts: win_k
+- hosts: win
   tasks:
     - name: Install Chrome
       win_package:

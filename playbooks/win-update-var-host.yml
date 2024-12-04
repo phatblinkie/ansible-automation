@@ -1,0 +1,45 @@
+---
+- hosts: "{{ target }}"
+  tasks:
+    - name: Update Syscon
+      ansible.windows.win_updates:
+        category_names:
+          - CriticalUpdates
+          - DefinitionUpdates
+          - SecurityUpdates
+          - Updates
+        log_path: c:\ansible_wu1.txt
+        reboot: true
+        reboot_timeout: 900
+      register: update_result
+
+    - name: Display Results
+      ansible.builtin.debug:
+        msg:
+          - "Patching Status"
+          - "{{ update_result }}"
+
+    - name: Send facts to database
+      ansible.builtin.uri:
+        url: "http://127.0.0.1/post/store_facts.php?taskid=1"
+        method: POST
+        body_format: json
+        body: "{{ update_result }}"
+        headers:
+          Content-Type: application/json
+        status_code: 200
+        return_content: True
+      register: postoutput1
+      delegate_to: localhost
+      check_mode: no
+
+    - name: Display db Post Status
+      ansible.builtin.debug:
+        msg:
+          - "Patching Status"
+          - "{{ postoutput1 }}"
+
+
+
+
+

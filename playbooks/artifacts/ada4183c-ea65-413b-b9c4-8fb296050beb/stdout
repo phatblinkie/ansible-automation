@@ -1,3 +1,0 @@
-[1;35m[WARNING]: provided hosts list is empty, only localhost is available. Note that[0m
-[1;35mthe implicit localhost does not match 'all'[0m
-[0;31mERROR! the role 'role_name' was not found in /playbooks/project/roles:/home/admin/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:/playbooks/project[0m

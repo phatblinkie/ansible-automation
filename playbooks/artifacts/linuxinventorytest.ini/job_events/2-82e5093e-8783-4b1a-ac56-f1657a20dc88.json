@@ -1,1 +1,0 @@
-{"event": "verbose", "uuid": "82e5093e-8783-4b1a-ac56-f1657a20dc88", "counter": 2, "stdout": "\u001b[1;35mthe implicit localhost does not match 'all'\u001b[0m", "start_line": 1, "end_line": 2, "runner_ident": "linuxinventorytest.ini", "created": "2024-10-03T02:13:45.126148+00:00"}

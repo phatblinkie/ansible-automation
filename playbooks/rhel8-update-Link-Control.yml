@@ -1,5 +1,5 @@
 ---
-- hosts: rhelogs
+- hosts: Link_Control
   vars:
     - ansible_remote_tmp: /var/tmp/ans
   tasks:

@@ -1,0 +1,6 @@
+---
+- hosts: Win_Servers:win_k:VDI_Servers:HBSS:Domain_Controllers:VADER:Syscon
+  tasks:
+   - name: Ping Windows Hosts
+     win_ping:
+
