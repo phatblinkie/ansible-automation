@@ -16,6 +16,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Retrieve project_id from query parameters
+$project_id = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
+
 $sql = "SELECT
   ip_address,
   hostname,
@@ -33,7 +36,8 @@ $sql = "SELECT
 FROM
   system_status
 WHERE
-  id IN (
+  project_id = $project_id
+  AND id IN (
     SELECT
       MAX(id)
     FROM
@@ -54,13 +58,11 @@ if ($result->num_rows > 0) {
         $data[] = $row;
     }
 } else {
-    echo "0 results";
+    echo json_encode([]);
 }
 
 $conn->close();
 
-// Set header to JSON
-header('Content-Type: application/json');
 // Output JSON data
 echo json_encode($data);
 ?>
