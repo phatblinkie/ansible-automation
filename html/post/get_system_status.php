@@ -37,14 +37,6 @@ FROM
   system_status
 WHERE
   project_id = $project_id
-  AND id IN (
-    SELECT
-      MAX(id)
-    FROM
-      system_status
-    GROUP BY
-      hostname
-  )
   AND (uptime != 0 OR TIMESTAMPDIFF(HOUR, last_responded, NOW()) <= 4 OR (ansible_ping = 'unreachable' AND TIMESTAMPDIFF(HOUR, last_updated, NOW()) <= 4))
 ORDER BY
   id DESC;";
