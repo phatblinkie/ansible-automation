@@ -20,5 +20,5 @@ CREATE TABLE `system_status` (
   `project_id` int DEFAULT NULL,
   `task_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ip_address` (`ip_address`)
-) ENGINE=InnoDB AUTO_INCREMENT=4077 DEFAULT CHARSET=latin1
+  UNIQUE KEY `unique_ip_project` (`ip_address`,`project_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1

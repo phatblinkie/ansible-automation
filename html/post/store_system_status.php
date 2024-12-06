@@ -35,7 +35,7 @@ if ($data && is_array($data)) {
         // Prepare and bind //key is ip_address and project_id
         $stmt = $conn->prepare("INSERT INTO system_status (ip_address, hostname, ansible_ping, disk_capacity, proc_usage, app_check, uptime, project_id, task_id, last_updated, last_responded)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), IF(? = 'pong', NOW(), NULL))
-        ON DUPLICATE KEY UPDATE hostname=VALUES(hostname), ansible_ping=VALUES(ansible_ping), disk_capacity=VALUES(disk_capacity), proc_usage=VALUES(proc_usage), app_check=VALUES(app_check), uptime=VALUES(uptime), project_id=VALUES(project_id), task_id=VALUES(task_id), last_updated=NOW(), last_responded=IF(VALUES(ansible_ping)='pong', VALUES(last_updated), last_responded)");
+        ON DUPLICATE KEY UPDATE hostname=VALUES(hostname), ansible_ping=VALUES(ansible_ping), disk_capacity=VALUES(disk_capacity), proc_usage=VALUES(proc_usage), app_check=VALUES(app_check), uptime=VALUES(uptime), task_id=VALUES(task_id), last_updated=NOW(), last_responded=IF(VALUES(ansible_ping)='pong', VALUES(last_updated), last_responded)");
         $stmt->bind_param("ssssssiiss", $ip_address, $hostname, $ansible_ping, $disk_capacity, $proc_usage, $app_check, $uptime, $project_id, $task_id, $ansible_ping);
 
         $success = true;
