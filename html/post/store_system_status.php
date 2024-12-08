@@ -32,11 +32,16 @@ if ($data && is_array($data)) {
     }
 
     if ($valid) {
-        // Prepare and bind //key is ip_address and project_id
+        // Prepare and bind for system_status table
         $stmt = $conn->prepare("INSERT INTO system_status (ip_address, hostname, ansible_ping, disk_capacity, proc_usage, app_check, uptime, project_id, task_id, last_updated, last_responded)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), IF(? = 'pong', NOW(), NULL))
         ON DUPLICATE KEY UPDATE hostname=VALUES(hostname), ansible_ping=VALUES(ansible_ping), disk_capacity=VALUES(disk_capacity), proc_usage=VALUES(proc_usage), app_check=VALUES(app_check), uptime=VALUES(uptime), task_id=VALUES(task_id), last_updated=NOW(), last_responded=IF(VALUES(ansible_ping)='pong', VALUES(last_updated), last_responded)");
         $stmt->bind_param("ssssssiiss", $ip_address, $hostname, $ansible_ping, $disk_capacity, $proc_usage, $app_check, $uptime, $project_id, $task_id, $ansible_ping);
+
+        // Prepare and bind for system_status_history table
+        $stmt_history = $conn->prepare("INSERT INTO system_status_history (ip_address, hostname, ansible_ping, disk_capacity, proc_usage, app_check, uptime, project_id, task_id, last_updated, last_responded)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), IF(? = 'pong', NOW(), NULL))");
+        $stmt_history->bind_param("ssssssiiss", $ip_address, $hostname, $ansible_ping, $disk_capacity, $proc_usage, $app_check, $uptime, $project_id, $task_id, $ansible_ping);
 
         $success = true;
 
@@ -52,15 +57,22 @@ if ($data && is_array($data)) {
             $project_id = $item['project_id'];
             $task_id = $item['task_id'];
 
-            // Execute the statement
+            // Execute the statement for system_status table
             if (!$stmt->execute()) {
+                $success = false;
+                break;
+            }
+
+            // Execute the statement for system_status_history table
+            if (!$stmt_history->execute()) {
                 $success = false;
                 break;
             }
         }
 
-        // Close the statement and connection
+        // Close the statements and connection
         $stmt->close();
+        $stmt_history->close();
         $conn->close();
 
         // Return a response
