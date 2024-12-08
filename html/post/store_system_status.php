@@ -70,9 +70,18 @@ if ($data && is_array($data)) {
             }
         }
 
-        // Close the statements and connection
+        // Close the statements
         $stmt->close();
         $stmt_history->close();
+
+        // Remove entries older than 4 months from system_status_history table
+        $delete_stmt = $conn->prepare("DELETE FROM system_status_history WHERE last_updated < DATE_SUB(NOW(), INTERVAL 4 MONTH)");
+        if (!$delete_stmt->execute()) {
+            $success = false;
+        }
+        $delete_stmt->close();
+
+        // Close the connection
         $conn->close();
 
         // Return a response

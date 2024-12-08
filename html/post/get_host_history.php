@@ -29,6 +29,9 @@ switch ($time_frame) {
     case 'month':
         $date_condition = "last_updated >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
         break;
+    case '90days':
+        $date_condition = "last_updated >= DATE_SUB(NOW(), INTERVAL 3 MONTH)";
+        break;
     case 'today':
     default:
         $date_condition = "DATE(last_updated) = CURDATE()";
