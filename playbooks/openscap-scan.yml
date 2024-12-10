@@ -1,0 +1,64 @@
+---
+- name: OpenSCAP Compliance Scan
+  hosts: all
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: Ensure OpenSCAP is installed on RedHat-based systems
+      ansible.builtin.yum:
+        name: openscap-scanner
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Ensure OpenSCAP is installed on Debian-based systems
+      ansible.builtin.apt:
+        name: openscap-scanner
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure Chocolatey is installed on Windows
+      win_chocolatey:
+        name: chocolatey
+        state: present
+      when: ansible_os_family == "Windows"
+
+    - name: Ensure OpenSCAP is installed on Windows
+      win_chocolatey:
+        name: openscap
+        state: present
+      when: ansible_os_family == "Windows"
+
+    - name: Perform OpenSCAP scan on RedHat-based systems
+      ansible.builtin.command:
+        cmd: oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard --results /tmp/openscap-results.xml /usr/share/xml/scap/ssg/content/ssg-centos7-ds.xml
+      when: ansible_os_family == "RedHat"
+
+    - name: Perform OpenSCAP scan on Debian-based systems
+      ansible.builtin.command:
+        cmd: oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard --results /tmp/openscap-results.xml /usr/share/xml/scap/ssg/content/ssg-debian8-ds.xml
+      when: ansible_os_family == "Debian"
+
+    - name: Perform OpenSCAP scan on Windows
+      ansible.windows.win_command:
+        cmd: oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard --results C:\openscap-results.xml C:\path\to\scap\content\ssg-windows10-ds.xml
+      when: ansible_os_family == "Windows"
+
+    - name: Fetch OpenSCAP results from RedHat-based systems
+      ansible.builtin.fetch:
+        src: /tmp/openscap-results.xml
+        dest: ./results/
+        flat: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Fetch OpenSCAP results from Debian-based systems
+      ansible.builtin.fetch:
+        src: /tmp/openscap-results.xml
+        dest: ./results/
+        flat: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Fetch OpenSCAP results from Windows
+      ansible.windows.win_copy:
+        src: C:\openscap-results.xml
+        dest: ./results/openscap-results-{{ inventory_hostname }}.xml
+      when: ansible_os_family == "Windows"
