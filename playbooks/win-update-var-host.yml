@@ -1,5 +1,5 @@
 ---
-- hosts: "{{ target }}"
+- hosts: win_hosts
   tasks:
     - name: Update Syscon
       ansible.windows.win_updates:
@@ -11,20 +11,25 @@
         log_path: c:\ansible_wu1.txt
         reboot: true
         reboot_timeout: 900
+        state: searched
       register: update_result
+
+    - name: Set hostname fact
+      ansible.builtin.set_fact:
+        update_result_with_hostname: "{{ update_result | combine({'hostname': ansible_hostname}) }}"
 
     - name: Display Results
       ansible.builtin.debug:
         msg:
           - "Patching Status"
-          - "{{ update_result }}"
+          - "{{ update_result_with_hostname }}"
 
     - name: Send facts to database
       ansible.builtin.uri:
-        url: "http://127.0.0.1/post/store_facts.php?taskid=1"
+        url: "http://127.0.0.1/post/store_windows_patching_update.php"
         method: POST
         body_format: json
-        body: "{{ update_result }}"
+        body: "{{ update_result_with_hostname }}"
         headers:
           Content-Type: application/json
         status_code: 200
@@ -38,8 +43,3 @@
         msg:
           - "Patching Status"
           - "{{ postoutput1 }}"
-
-
-
-
-

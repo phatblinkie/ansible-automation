@@ -21,30 +21,31 @@ $data = json_decode($data, true);
 $response = ['status' => 'error', 'message' => 'Invalid data'];
 
 // Sanity check function
-function checkAndSetDefault(&$array, $key, $default) {
+function checkAndSetDefault(&$array, $key, $default, &$missing_fields) {
     if (!isset($array[$key])) {
         $array[$key] = $default;
+        $missing_fields[] = $key;
         return false;
     }
     return true;
 }
 
 // Check if data exists and has all required fields
-if ($data && isset($data['msg']) && is_array($data['msg'])) {
-    $status = $data['msg'][1];
+$missing_fields = [];
+if ($data && isset($data['changed']) && isset($data['failed']) && isset($data['failed_update_count']) && isset($data['found_update_count']) && isset($data['installed_update_count']) && isset($data['reboot_required']) && isset($data['rebooted'])) {
+    $status = $data;
     $hostname = $data['hostname'] ?? 'unknown_host';
     $filtered_updates = $status['filtered_updates'] ?? [];
     $updates = $status['updates'] ?? [];
 
     // Sanity checks for status fields
-    $missing_fields = [];
-    if (!checkAndSetDefault($status, 'changed', false)) $missing_fields[] = 'changed';
-    if (!checkAndSetDefault($status, 'failed', false)) $missing_fields[] = 'failed';
-    if (!checkAndSetDefault($status, 'failed_update_count', 0)) $missing_fields[] = 'failed_update_count';
-    if (!checkAndSetDefault($status, 'found_update_count', 0)) $missing_fields[] = 'found_update_count';
-    if (!checkAndSetDefault($status, 'installed_update_count', 0)) $missing_fields[] = 'installed_update_count';
-    if (!checkAndSetDefault($status, 'reboot_required', false)) $missing_fields[] = 'reboot_required';
-    if (!checkAndSetDefault($status, 'rebooted', false)) $missing_fields[] = 'rebooted';
+    if (!checkAndSetDefault($status, 'changed', false, $missing_fields)) $missing_fields[] = 'changed';
+    if (!checkAndSetDefault($status, 'failed', false, $missing_fields)) $missing_fields[] = 'failed';
+    if (!checkAndSetDefault($status, 'failed_update_count', 0, $missing_fields)) $missing_fields[] = 'failed_update_count';
+    if (!checkAndSetDefault($status, 'found_update_count', 0, $missing_fields)) $missing_fields[] = 'found_update_count';
+    if (!checkAndSetDefault($status, 'installed_update_count', 0, $missing_fields)) $missing_fields[] = 'installed_update_count';
+    if (!checkAndSetDefault($status, 'reboot_required', false, $missing_fields)) $missing_fields[] = 'reboot_required';
+    if (!checkAndSetDefault($status, 'rebooted', false, $missing_fields)) $missing_fields[] = 'rebooted';
 
     // Insert or update patching status
     $patching_status_id = insertOrUpdatePatchingStatus($conn, $hostname, $status);
@@ -59,6 +60,8 @@ if ($data && isset($data['msg']) && is_array($data['msg'])) {
     if (!empty($missing_fields)) {
         $response['message'] = 'Missing fields: ' . implode(', ', $missing_fields);
     }
+} else {
+    $response['message'] = 'Invalid data: Missing required fields';
 }
 
 // Function to insert or update patching status
@@ -67,13 +70,6 @@ function insertOrUpdatePatchingStatus($conn, $hostname, $status) {
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                             ON DUPLICATE KEY UPDATE changed=VALUES(changed), failed=VALUES(failed), failed_update_count=VALUES(failed_update_count), found_update_count=VALUES(found_update_count), installed_update_count=VALUES(installed_update_count), reboot_required=VALUES(reboot_required), rebooted=VALUES(rebooted), timestamp=CURRENT_TIMESTAMP");
     $stmt->bind_param("siiiiiii", $hostname, $status['changed'], $status['failed'], $status['failed_update_count'], $status['found_update_count'], $status['installed_update_count'], $status['reboot_required'], $status['rebooted']);
-
-    // Print the MySQL statement
-    $query = "INSERT INTO patching_status (hostname, changed, failed, failed_update_count, found_update_count, installed_update_count, reboot_required, rebooted)
-              VALUES ('$hostname', {$status['changed']}, {$status['failed']}, {$status['failed_update_count']}, {$status['found_update_count']}, {$status['installed_update_count']}, {$status['reboot_required']}, {$status['rebooted']})
-              ON DUPLICATE KEY UPDATE changed=VALUES(changed), failed=VALUES(failed), failed_update_count=VALUES(failed_update_count), found_update_count=VALUES(found_update_count), installed_update_count=VALUES(installed_update_count), reboot_required=VALUES(reboot_required), rebooted=VALUES(rebooted), timestamp=CURRENT_TIMESTAMP";
-    echo "Executing query: $query\n";
-
     $stmt->execute();
     $patching_status_id = $stmt->insert_id;
     $stmt->close();
@@ -91,13 +87,6 @@ function insertOrUpdatePatchingUpdates($conn, $patching_status_id, $updates, $up
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                                 ON DUPLICATE KEY UPDATE title=VALUES(title), categories=VALUES(categories), downloaded=VALUES(downloaded), installed=VALUES(installed), kb=VALUES(kb), update_type=VALUES(update_type)");
         $stmt->bind_param("issssiss", $patching_status_id, $update_id, $update['title'], $categories, $downloaded, $installed, $kb, $update_type);
-
-        // Print the MySQL statement
-        $query = "INSERT INTO patching_updates (patching_status_id, update_id, title, categories, downloaded, installed, kb, update_type)
-                  VALUES ($patching_status_id, '$update_id', '{$update['title']}', '$categories', $downloaded, $installed, '$kb', '$update_type')
-                  ON DUPLICATE KEY UPDATE title=VALUES(title), categories=VALUES(categories), downloaded=VALUES(downloaded), installed=VALUES(installed), kb=VALUES(kb), update_type=VALUES(update_type)";
-        echo "Executing query: $query\n";
-
         $stmt->execute();
         $stmt->close();
     }
