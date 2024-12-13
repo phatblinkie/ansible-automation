@@ -21,8 +21,8 @@ $data = json_decode($data, true);
 $response = ['status' => 'error', 'message' => 'Invalid data'];
 
 // Sanity check function
-function checkAndSetDefault(&$array, $key, $default, &$missing_fields) {
-    if (!isset($array[$key]) || $array[$key] === null || $array[$key] === '') {
+function checkAndSetDefault(&$array, $key, $default, &$missing_fields, $allow_empty_string = false) {
+    if (!isset($array[$key]) || $array[$key] === null || (!$allow_empty_string && $array[$key] === '')) {
         $array[$key] = $default;
         $missing_fields[] = $key;
         return false;
@@ -40,7 +40,7 @@ if ($data && isset($data['changed']) && isset($data['failed']) && isset($data['m
     // Sanity checks for status fields
     if (!checkAndSetDefault($status, 'changed', false, $missing_fields)) $missing_fields[] = 'changed';
     if (!checkAndSetDefault($status, 'failed', false, $missing_fields)) $missing_fields[] = 'failed';
-    if (!checkAndSetDefault($status, 'msg', '', $missing_fields)) $missing_fields[] = 'msg';
+    if (!checkAndSetDefault($status, 'msg', '', $missing_fields, true)) $missing_fields[] = 'msg';
     if (!checkAndSetDefault($status, 'rc', 0, $missing_fields)) $missing_fields[] = 'rc';
     if (!checkAndSetDefault($status, 'project_id', 0, $missing_fields)) $missing_fields[] = 'project_id';
     if (!checkAndSetDefault($status, 'task_id', 0, $missing_fields)) $missing_fields[] = 'task_id';
