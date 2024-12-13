@@ -75,3 +75,24 @@ CREATE TABLE `patching_status` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1
 
+
+CREATE TABLE linux_patching_status (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hostname VARCHAR(255) NOT NULL,
+    changed BOOLEAN NOT NULL,
+    failed BOOLEAN NOT NULL,
+    msg TEXT,
+    rc INT NOT NULL,
+    project_id INT NOT NULL,
+    task_id INT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE linux_patching_results (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    linux_patching_status_id INT NOT NULL,
+    result TEXT NOT NULL,
+    project_id INT NOT NULL,
+    task_id INT NOT NULL,
+    FOREIGN KEY (linux_patching_status_id) REFERENCES linux_patching_status(id)
+);

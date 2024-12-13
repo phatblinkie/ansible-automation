@@ -1,7 +1,7 @@
 ---
 - hosts: "{{ target }}"
   vars:
-    - ansible_remote_tmp: /var/tmp/ans
+    ansible_remote_tmp: /var/tmp/ans
   tasks:
     - name: Upgrade all packages
       ansible.builtin.dnf:
@@ -11,18 +11,27 @@
       register: dnfresult    
       become: true
 
+    - name: Set default values for task_id and project_id if they are blank or null
+      ansible.builtin.set_fact:
+        task_id: "{{ semaphore_vars.task_details.id | default(0) }}"
+        project_id: "{{ semaphore_vars.task_details.project_id | default(0) }}"
+
+    - name: Set other custom facts in result
+      ansible.builtin.set_fact:
+        combined_results: "{{ dnfresult | combine({'hostname': ansible_hostname, 'task_id': task_id, 'project_id': project_id}) }}"
+
     - name: Display Results
       ansible.builtin.debug:
         msg:
           - "Patching Status"
-          - "{{ dnfresult }}"
+          - "{{ combined_results }}"
 
     - name: Send facts to database
       ansible.builtin.uri:
-        url: "http://127.0.0.1/post/store_facts.php?taskid=1"
+        url: "http://127.0.0.1/post/store_linux_patching_update.php"
         method: POST
         body_format: json
-        body: "{{ dnfresult }}"
+        body: "{{ combined_results }}"
         headers:
           Content-Type: application/json
         status_code: 200
