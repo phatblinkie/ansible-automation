@@ -1,7 +1,7 @@
 ---
 - hosts: win_hosts
   tasks:
-    - name: Update Syscon
+    - name: Update {{ ansible_hostname }}
       ansible.windows.win_updates:
         category_names:
           - CriticalUpdates
@@ -14,22 +14,27 @@
         state: searched
       register: update_result
 
-    - name: Set hostname fact
+    - name: Set default values for task_id and project_id if they are blank or null
       ansible.builtin.set_fact:
-        update_result_with_hostname: "{{ update_result | combine({'hostname': ansible_hostname}) }}"
+        task_id: "{{ semaphore_vars.task_details.id | default(0) }}"
+        project_id: "{{ semaphore_vars.task_details.project_id | default(0) }}"
+
+    - name: Set other custom facts in result
+      ansible.builtin.set_fact:
+        combined_results: "{{ update_result | combine({'hostname': ansible_hostname, 'task_id': task_id, 'project_id': project_id}) }}"
 
     - name: Display Results
       ansible.builtin.debug:
         msg:
           - "Patching Status"
-          - "{{ update_result_with_hostname }}"
+          - "{{ combined_results }}"
 
     - name: Send facts to database
       ansible.builtin.uri:
         url: "http://127.0.0.1/post/store_windows_patching_update.php"
         method: POST
         body_format: json
-        body: "{{ update_result_with_hostname }}"
+        body: "{{ combined_results }}"
         headers:
           Content-Type: application/json
         status_code: 200
