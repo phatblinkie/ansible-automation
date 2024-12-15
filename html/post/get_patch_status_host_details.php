@@ -15,23 +15,35 @@ if ($conn->connect_error) {
 $project_id = $_GET['project_id'];
 $hostname = $_GET['hostname'];
 
-// Fetch the most recent data for the specified host from linux_patching_status and patching_status tables
+// Fetch the most recent data for the specified host from patching_status table
 $query = "
-    SELECT * FROM linux_patching_status WHERE project_id = ? AND hostname = ? ORDER BY timestamp DESC LIMIT 1";
+    SELECT *
+    FROM patching_status
+    WHERE project_id = ?
+    AND hostname = ?
+    ORDER BY timestamp DESC
+    LIMIT 1";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("is", $project_id, $hostname);
 $stmt->execute();
 $result = $stmt->get_result();
 $hostDetails = $result->fetch_assoc();
 
-if (!$hostDetails) {
+if ($hostDetails) {
+    // Fetch the list of updates for the specified host
     $query = "
-        SELECT * FROM patching_status WHERE project_id = ? AND hostname = ? ORDER BY timestamp DESC LIMIT 1";
+        SELECT title
+        FROM patching_updates
+        WHERE patching_status_id = ?";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("is", $project_id, $hostname);
+    $stmt->bind_param("i", $hostDetails['id']);
     $stmt->execute();
     $result = $stmt->get_result();
-    $hostDetails = $result->fetch_assoc();
+    $updates = [];
+    while ($row = $result->fetch_assoc()) {
+        $updates[] = $row['title'];
+    }
+    $hostDetails['updates'] = $updates;
 }
 
 $stmt->close();

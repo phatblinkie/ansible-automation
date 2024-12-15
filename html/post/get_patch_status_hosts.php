@@ -14,13 +14,20 @@ if ($conn->connect_error) {
 
 $project_id = $_GET['project_id'];
 
-// Fetch hosts from linux_patching_status and patching_status tables
+// Fetch hosts and number of available updates from patching_status table
 $query = "
-    SELECT DISTINCT hostname FROM linux_patching_status WHERE project_id = ?
-    UNION
-    SELECT DISTINCT hostname FROM patching_status WHERE project_id = ?";
+    SELECT hostname, found_update_count AS available_updates
+    FROM patching_status
+    WHERE project_id = ?
+    AND timestamp = (
+        SELECT MAX(timestamp)
+        FROM patching_status AS ps
+        WHERE ps.hostname = patching_status.hostname
+        AND ps.project_id = patching_status.project_id
+    )
+    ORDER BY hostname";
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ii", $project_id, $project_id);
+$stmt->bind_param("i", $project_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
