@@ -38,6 +38,7 @@ switch ($time_frame) {
         break;
 }
 
+// Updated SQL query with subquery to find the ip_address
 $sql = "SELECT
   last_updated,
   disk_capacity,
@@ -46,7 +47,19 @@ $sql = "SELECT
 FROM
   system_status_history
 WHERE
-  project_id = $project_id AND hostname = '$hostname' AND $date_condition
+  project_id = $project_id
+  AND (
+    hostname = '$hostname'
+    OR hostname LIKE '$hostname.%'
+    OR ip_address = (
+      SELECT ip_address
+      FROM system_status_history
+      WHERE project_id = $project_id
+      AND (hostname = '$hostname' OR hostname LIKE '$hostname.%')
+      LIMIT 1
+    )
+  )
+  AND $date_condition
 ORDER BY
   last_updated ASC";
 
