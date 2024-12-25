@@ -2,6 +2,8 @@
 - name: Gather and Store Historical Data of Installed Windows Updates
   hosts: win_hosts
   gather_facts: no
+  vars:
+    project_id: "{{ semaphore_vars.task_details.project_id }}"
   tasks:
     - name: Get Windows Update History
       win_shell: |
@@ -36,7 +38,8 @@
       set_fact:
         combined_updates: {
           "update_history": "{{ update_history.stdout | from_json }}",
-          "hostname": "{{ inventory_hostname }}"
+          "hostname": "{{ inventory_hostname }}",
+          "project_id": "{{ project_id }}"
         }
 
     - name: Save combined updates to file

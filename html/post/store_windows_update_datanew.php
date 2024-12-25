@@ -21,14 +21,15 @@ $data = json_decode($data, true);
 $response = ['status' => 'error', 'message' => 'Invalid data'];
 
 // Check if data exists and has all required fields
-if ($data && isset($data['hostname']) && isset($data['update_history'])) {
+if ($data && isset($data['hostname']) && isset($data['update_history']) && isset($data['project_id'])) {
     $hostname = $data['hostname'];
     $update_history = $data['update_history'];
+    $project_id = $data['project_id'];
 
     // Function to insert update history
-    function insertUpdateHistory($conn, $hostname, $updates) {
-        $stmt_check = $conn->prepare("SELECT COUNT(*) FROM windows_update_history WHERE hostname = ? AND title = ? AND date = ? AND operation = ? AND status = ? AND COALESCE(kb, '') = COALESCE(?, '') AND pc = ?");
-        $stmt_insert = $conn->prepare("INSERT INTO windows_update_history (hostname, title, date, operation, status, kb, pc) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    function insertUpdateHistory($conn, $hostname, $project_id, $updates) {
+        $stmt_check = $conn->prepare("SELECT COUNT(*) FROM windows_update_history WHERE hostname = ? AND project_id = ? AND title = ? AND date = ? AND operation = ? AND status = ? AND COALESCE(kb, '') = COALESCE(?, '') AND pc = ?");
+        $stmt_insert = $conn->prepare("INSERT INTO windows_update_history (hostname, project_id, title, date, operation, status, kb, pc) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         if (!$stmt_check || !$stmt_insert) {
             return ['status' => 'error', 'message' => 'Prepare failed: ' . $conn->error];
         }
@@ -44,14 +45,14 @@ if ($data && isset($data['hostname']) && isset($data['update_history'])) {
             $kb = $update['KB'] ?? null;
             $pc = $update['PC'] ?? null;
 
-            $stmt_check->bind_param("sssssss", $hostname, $title, $date, $operation, $status, $kb, $pc);
+            $stmt_check->bind_param("ssssssss", $hostname, $project_id, $title, $date, $operation, $status, $kb, $pc);
             $stmt_check->execute();
             $stmt_check->store_result(); // Ensure the result set is fully fetched
             $stmt_check->bind_result($count);
             $stmt_check->fetch();
 
             if ($count == 0) {
-                $stmt_insert->bind_param("sssssss", $hostname, $title, $date, $operation, $status, $kb, $pc);
+                $stmt_insert->bind_param("ssssssss", $hostname, $project_id, $title, $date, $operation, $status, $kb, $pc);
                 if ($stmt_insert->execute()) {
                     $insertions++;
                 } else {
@@ -67,7 +68,7 @@ if ($data && isset($data['hostname']) && isset($data['update_history'])) {
     }
 
     // Insert update history
-    $response = insertUpdateHistory($conn, $hostname, $update_history);
+    $response = insertUpdateHistory($conn, $hostname, $project_id, $update_history);
 }
 
 // Set header to JSON
