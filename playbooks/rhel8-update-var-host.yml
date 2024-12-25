@@ -5,10 +5,10 @@
   tasks:
     - name: Upgrade all packages
       ansible.builtin.dnf:
-        name: "*"
+        name: "cheese"
         state: latest
         update_cache: true
-      register: dnfresult    
+      register: dnfresult
       become: true
 
     - name: Set default values for task_id and project_id if they are blank or null
@@ -45,5 +45,3 @@
         msg:
           - "Patching Status"
           - "{{ postoutput1 }}"
-
-

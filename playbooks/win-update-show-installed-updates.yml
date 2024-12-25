@@ -1,0 +1,32 @@
+---
+- name: Gather Installed Updates with KB Number on Windows
+  hosts: win_hosts
+  gather_facts: no
+  tasks:
+    - name: Get Installed Updates from Win32_QuickFixEngineering
+      win_shell: |
+        Get-WmiObject -Class Win32_QuickFixEngineering | Where-Object { $_.HotFixID -match "^KB" } | Select-Object -Property Description, HotFixID, InstalledOn
+      register: wmi_updates
+
+    - name: Get Installed Updates from Win32_ReliabilityRecords
+      win_shell: |
+        Get-WmiObject -Class Win32_ReliabilityRecords | Where-Object { $_.InsertionStrings -match "KB[0-9]+" } | Select-Object -Property EventIdentifier, EventType, ProductName, InsertionStrings, TimeGenerated
+      register: reliability_updates
+
+    - name: Get Installed Updates from Windows Update History
+      win_shell: |
+        Get-WindowsUpdateLog | Where-Object { $_.Description -match "KB[0-9]+" } | Select-Object -Property Timestamp, Title, UpdateID, Description
+      register: update_history
+
+    - name: Show WMI Updates with KB Number
+      debug:
+        msg: "WMI Updates with KB Number: {{ wmi_updates.stdout_lines }}"
+
+    - name: Show Reliability Records Updates with KB Number
+      debug:
+        msg: "Reliability Records Updates with KB Number: {{ reliability_updates.stdout_lines }}"
+
+    - name: Show Windows Update History with KB Number
+      debug:
+        msg: "Windows Update History with KB Number: {{ update_history.stdout_lines }}"
+
