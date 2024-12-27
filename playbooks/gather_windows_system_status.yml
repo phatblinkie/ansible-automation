@@ -32,10 +32,6 @@
           set_fact:
             system_status_results: []
 
-        - name: Gather Hostname
-          win_shell: hostname
-          register: hostname_output
-
         - name: Gather Ansible Ping
           win_ping:
           register: ansible_ping_output
@@ -61,7 +57,7 @@
               {{
                 system_status_results + [{
                   "ip_address": ip_address,
-                  "hostname": hostname_output.stdout.strip(),
+                  "hostname": inventory_hostname,
                   "ansible_ping": ansible_ping_output.ping,
                   "disk_capacity": disk_capacity_output.stdout.strip(),
                   "proc_usage": proc_usage_output.stdout_lines,
